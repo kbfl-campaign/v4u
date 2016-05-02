@@ -32,6 +32,7 @@ voterRegistration.data = {
 	"extra-dc": "✔ ",
 	"extra-lang": "✔ ",
 	"date": (new Date().toJSON().slice(0,10).split("-").join("")),
+	"step": 0,
 };
 
 // text position on canvas
@@ -218,22 +219,55 @@ voterRegistration.setRadio = function(){
 		voterRegistration.data.optin = false;
 		return false;
 	}
-	if ($.inArray(this.id, ["gender-male", "dc-yes", "extra-lang-zh"]) >= 0) {
+	if ($.inArray(this.id, ["gender-male", "dc-yes-new", "dc-yes-exist", "extra-lang-zh"]) >= 0) {
 		voterRegistration.data[this.name] = "✔ ";
 	} else {
 		voterRegistration.data[this.name] = " ✔";
+	}
+	if ($.inArray(this.id, ["dc-fc"]) >= 0) {
+		voterRegistration.data[this.name] = "  ";
 	}
 }
 
 // FIXME: quick and dirty next step button
 voterRegistration.nextStep = function(){
-	var target = $(".current-step");
-	target.removeClass("current-step").addClass("prev-steps");
-	target.next().removeClass("next-steps").addClass("current-step");
+	voterRegistration.data.step++;
+	voterRegistration.setStep(voterRegistration.data.step);
+	return false;
+}
+voterRegistration.setStep = function(step){
+	var target = $(".step-container");
+	target.removeClass("step-current-"+(step-1)).addClass("step-current-"+step);
+
+	var navtarget = $(".step-nav-container");
+	navtarget.removeClass("step-current-"+(step-1)).addClass("step-current-"+step);
+
+	$(".step-nav-1 .nav-content").text(voterRegistration.data["name-zh"]+", "+voterRegistration.data["telecode"]);
+	$(".step-nav-2 .nav-content").text(voterRegistration.data["name-en-surname"]+", "+voterRegistration.data["name-en-othername"]);
+	$(".step-nav-3 .nav-content").text(voterRegistration.data["idcard"]+", "+	$(".gender-btn.active .btn-text").text());
+	$(".step-nav-4 .nav-content").text(
+		voterRegistration.data["address-flat"]+" "+
+		voterRegistration.data["address-floor"]+" "+
+		voterRegistration.data["address-block"]+" "+
+		voterRegistration.data["address-line0"]+" "+
+		voterRegistration.data["address-line1"]+" "+
+		voterRegistration.data["address-line2"]+" "+
+		voterRegistration.data["address-line3"]
+  );
+	$(".step-nav-5 .nav-content").text(
+		voterRegistration.data["extra-landline"]+" "+
+		voterRegistration.data["extra-mobile"]+" "+
+		voterRegistration.data["extra-office"]+" "+
+		voterRegistration.data["extra-email"]+" "+
+		$(".lang-btn.active .btn-text").text()+" "+
+		$(".extra-dc-btn.active .btn-text").text()
+	);
 
 	$('html, body').animate({
 		scrollTop: 0
 	}, 500);
+
+	return false;
 }
 
 // FIXME: quick and dirty generate button
@@ -326,11 +360,10 @@ voterRegistration.initSign = function(){
 voterRegistration.resetSign = function(){
 	var canvas = voterRegistration.signarea;
 	var context = voterRegistration.signarea.getContext('2d');
-	context.clearRect(0, 0, 1000, 1000);
 	context.fillStyle="white";
 	context.fillRect(0, 0, 320, 150);
 	context.fillStyle=null;
-	context.strokeStyle = 'black';
+	context.strokeStyle = '#c91f37';
 	context.lineWidth = 1;
   var path=new Path2D();
 	path.moveTo(0,102);
@@ -354,7 +387,8 @@ voterRegistration.updateImgLink = function(){
 		$("<img src='https://www.google-analytics.com/collect?v=1&t=event&tid=UA-72771086-2&cid=force-anonymous-client-id&ec=Form&el="+window.location.search.match(/\d{6}/)[0]+"&ea=Download&ni=1'>").appendTo("body");
 		voterRegistration.data.optin=false;
 	}
-	$("#downloadButton").attr("href",voterRegistration.canvas.toDataURL("image/png"));
+	$("#downloadButton").attr("href", voterRegistration.canvas.toDataURL("image/png"));
+	$("#downloadArea").attr("src", voterRegistration.canvas.toDataURL("image/png"));
 }
 
 // render data string on output canvas
@@ -384,7 +418,7 @@ voterRegistration.simpleBind = function(){
 
 // FIXME: quick and dirty bind for email
 voterRegistration.emailBind = function(){
-	voterRegistration.data["extra-email"] = $("extra-email").val();
+	voterRegistration.data["extra-email"] = $("#extra-email").val();
 }
 
 // MISC
@@ -406,8 +440,11 @@ $("#name-en-form input").each(function(){
 $("#address-form input").each(function(){
 	$(this).on('input', voterRegistration.simpleBind);
 });
-$("#extra-form input.form-control").each(function(){
+$("#extra-form input.phone-control").each(function(){
 	$(this).on('input', voterRegistration.simpleBind);
+});
+$("#extra-form input.email-control").each(function(){
+	$(this).on('input', voterRegistration.emailBind);
 });
 
 $(".nextButton").on('click', voterRegistration.nextStep);
